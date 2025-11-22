@@ -1,0 +1,29 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  - group: tf-backend
+  - group: tfvars-prod
+
+stages:
+- stage: Terraform_Apply
+  jobs:
+  - job: apply_prod
+    pool: { vmImage: 'ubuntu-latest' }
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: AzureServiceConnection
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          cd terraform
+          terraform init \
+            -backend-config="resource_group_name=$(TF_STATE_RG)" \
+            -backend-config="storage_account_name=$(TF_STATE_SA)" \
+            -backend-config="container_name=$(TF_STATE_CONTAINER)" \
+            -backend-config="key=prod/terraform.tfstate"
+          terraform apply -var-file="envs/prod.tfvars" -auto-approve
