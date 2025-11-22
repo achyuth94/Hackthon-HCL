@@ -1,0 +1,9 @@
+prefix = "hack-dev"
+location = "eastus"
+rg_name = "hack-prod-rg"
+acr_name = "hackprodacr001"       # must be globally unique
+aks_name = "hack-prod-aks"
+keyvault_name = "hack-prod-kv"
+tfstate_resource_group = "tfstate-rg"
+tfstate_storage_account = "<TFSTATE_SA_NAME>"
+tfstate_container = "tfstate"
