@@ -1,0 +1,33 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  - group: aks-config
+  - group: acr-credentials
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- checkout: self
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: AzureServiceConnection
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az aks get-credentials --resource-group $(AKS_RG) --name $(AKS_NAME) --overwrite-existing
+- script: |
+    helm upgrade --install application-service charts/application-service \
+      --namespace default --create-namespace \
+      --set image.repository=$(ACR_LOGIN_SERVER)/application-service \
+      --set image.tag=$(Build.BuildId)
+  displayName: DeployAppService
+- script: |
+    helm upgrade --install patient-service charts/patient-service \
+      --namespace default --create-namespace \
+      --set image.repository=$(ACR_LOGIN_SERVER)/patient-service \
+      --set image.tag=$(Build.BuildId)
+  displayName: DeployPatientService
