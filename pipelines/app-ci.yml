@@ -1,0 +1,39 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - application-service/**
+      - patient-service/**
+
+variables:
+  - group: acr-credentials
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- checkout: self
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: AzureServiceConnection
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az acr login --name $(ACR_NAME)
+- script: |
+    IMAGE=$(ACR_LOGIN_SERVER)/application-service:$(Build.BuildId)
+    docker build -t $IMAGE application-service
+    docker push $IMAGE
+    docker tag $IMAGE $(ACR_LOGIN_SERVER)/application-service:latest
+    docker push $(ACR_LOGIN_SERVER)/application-service:latest
+  displayName: BuildPushApplication
+- script: |
+    IMAGE=$(ACR_LOGIN_SERVER)/patient-service:$(Build.BuildId)
+    docker build -t $IMAGE patient-service
+    docker push $IMAGE
+    docker tag $IMAGE $(ACR_LOGIN_SERVER)/patient-service:latest
+    docker push $(ACR_LOGIN_SERVER)/patient-service:latest
+  displayName: BuildPushPatient
