@@ -1,0 +1,14 @@
+replicaCount: 2
+image:
+  repository: "<ACR_LOGIN_SERVER>/application-service"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 3000
+env:
+  - name: PATIENT_SERVICE_URL
+    value: "http://patient-service:3001"
+secrets:
+  k8sName: app-secrets
+resources: {}
