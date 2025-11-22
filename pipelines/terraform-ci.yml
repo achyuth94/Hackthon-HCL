@@ -1,0 +1,35 @@
+trigger: none
+pr:
+  branches:
+    include:
+      - "*"
+
+variables:
+  - group: tf-backend
+
+stages:
+- stage: Terraform_CI
+  jobs:
+  - job: fmt_validate_plan
+    pool: { vmImage: 'ubuntu-latest' }
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: AzureServiceConnection
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          cd terraform
+          terraform init -backend=false
+          terraform fmt -check -recursive
+          terraform validate
+          terraform init \
+            -backend-config="resource_group_name=$(TF_STATE_RG)" \
+            -backend-config="storage_account_name=$(TF_STATE_SA)" \
+            -backend-config="container_name=$(TF_STATE_CONTAINER)" \
+            -backend-config="key=dev/terraform.tfstate"
+          terraform plan -var-file="envs/dev.tfvars" -out=tfplan
+          terraform show -no-color tfplan > plan.txt
+    - publish: terraform/plan.txt
+      artifact: tfplan
